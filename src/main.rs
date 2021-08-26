@@ -13,7 +13,8 @@ fn main() {
         //command is in form: secrets-storage get <project> <file> <location>
         let project = args.next().expect("no project provided");
         let file = args.next().expect("no file provided");
-        let location = args.next().expect("no location provided");
+        let mut location = args.next().expect("no location provided");
+        location.push_str(&file);
         let path = format!("./projects/{}/{}", project, file);
         std::fs::copy(path,location).expect("failed to retrieve file");
     }
