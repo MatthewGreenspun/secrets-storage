@@ -10,28 +10,41 @@ fn main(){
         }
     };
 
-    let project = match args.next(){
-        Some(project) => project,
-        None => {
-            println!("error: no project provided");
-            return;
-        },
-    };
-    let file_str = match args.next(){
-        Some(file_str) => file_str,
-        None => {
-            println!("error: no file provided");
-            return;
-        },
-    };
-
     if command == "save" {
+        let project = match args.next(){
+            Some(project) => project,
+            None => {
+                println!("error: no project provided\nfull command is: \n\tsecrets-storage save <project> <file>");
+                return;
+            },
+        };
+        let file_str = match args.next(){
+            Some(file_str) => file_str,
+            None => {
+                println!("error: no file provided\nfull command is: \n\tsecrets-storage save <project> <file>");
+                return;
+            },
+        };
         match save_secrets(project, file_str) {
             Ok(_) => println!("file saved successfully"),
             Err(_) => println!("error saving file"), 
         }
 
     } else if command == "get" {
+        let project = match args.next(){
+            Some(project) => project,
+            None => {
+                println!("error: no project provided\nfull command is: \n\tsecrets-storage get <project> <file> <location - optional>");
+                return;
+            },
+        };
+        let file_str = match args.next(){
+            Some(file_str) => file_str,
+            None => {
+                println!("error: no file provided\nfull command is: \n\tsecrets-storage get <project> <file> <location - optional>");
+                return;
+            },
+        };
         let location_str = match args.next(){
             Some(location) => location,
             None => String::from("./"),
@@ -41,6 +54,8 @@ fn main(){
             Ok(_) => println!("retrieved file successfully"),
             Err(_) => println!("error retrieving file"), 
         }
+    } else {
+        println!("{} is not a valid command", command);
     }
 }
 
