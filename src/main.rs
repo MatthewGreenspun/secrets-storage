@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{io::Write, path::Path};
 
 fn main(){
     let mut args = std::env::args().skip(1);
@@ -51,7 +51,7 @@ fn main(){
         };
 
         match get_secrets(project, file_str, location_str) {
-            Ok(_) => println!("retrieved file successfully"),
+            Ok(message) => println!("{}", message),
             Err(_) => println!("error retrieving file"), 
         }
     } else {
@@ -74,7 +74,7 @@ fn save_secrets(project: String, file_str: String) -> std::io::Result<()>{
     Ok(())
 }
 
-fn get_secrets(project: String, file_str: String, location_str: String) -> std::io::Result<()>{
+fn get_secrets(project: String, file_str: String, location_str: String) -> std::io::Result<&'static str>{
     //command is in form: secrets-storage get <project> <file> <location>
     //moves stored file to location
 
@@ -83,7 +83,17 @@ fn get_secrets(project: String, file_str: String, location_str: String) -> std::
     let file = Path::new(&file_str);
     let location = Path::new(&location_str);
     let full_location = location.join(file);
+    
+    let mut input = String::new();
+    if full_location.exists() {
+        print!("file {} already exists. Would you like to replace it?[y/n] ", &full_location.to_str().unwrap());
+        let _  = std::io::stdout().flush();
+        std::io::stdin().read_line(&mut input).expect("failed to read user input");
+    }
 
-    std::fs::copy(storage_path_str, full_location)?;
-    Ok(())
+    if input.trim() == "y" || !full_location.exists() {
+        std::fs::copy(storage_path_str, full_location)?;
+        return Ok("retrieved file successfully");
+    }
+    Ok("")
 }
