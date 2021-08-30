@@ -1,83 +1,73 @@
-use std::{io::Write, path::Path};
+use std::{ io::Write, path::Path };
+trait FriendlyError<T>{
+    fn log_on_none(&self, msg: &str) -> &T;
+}
+
+impl<T> FriendlyError<T> for Option<T> {
+    fn log_on_none(&self, msg: &str) -> &T {
+        let value = match self {
+                Some(value) => value,
+                None => {
+                    println!("{}", msg);
+                    std::process::exit(0); 
+                },
+        };
+        value
+    }
+}
 
 fn main(){
     let mut args = std::env::args().skip(1);
-    let command = match args.next(){
-        Some(command) => command,
-        None => {
-            println!("
-                \nCommands:\n
-                \n\tsecrets-storage save <project> <file>
-                \n\tsecrets-storage get <project> <file> <location - optional>
-                \n\tsecrets-storage delete <project> <file - optional>
-            ");
-            return;
-        }
-    };
+
+    let command_arg = args.next();
+    let project_arg = args.next();
+    let file_arg = args.next();
+
+    let command = command_arg.log_on_none(
+    "
+        \n\tCommands:\n
+        \tsecrets-storage save <project> <file>
+        \tsecrets-storage get <project> <file> <location - optional>
+        \tsecrets-storage delete <project> <file - optional>
+        "
+    );
 
     if command == "save" {
-        let project = match args.next(){
-            Some(project) => project,
-            None => {
-                println!("Error: no project provided\nfull command is: \n\tsecrets-storage save <project> <file>");
-                return;
-            },
-        };
-        let file_str = match args.next(){
-            Some(file_str) => file_str,
-            None => {
-                println!("Error: no file provided\nfull command is: \n\tsecrets-storage save <project> <file>");
-                return;
-            },
-        };
-        match save_secrets(project, file_str) {
+        let project = project_arg.log_on_none("Error: no project provided\nfull command is: \n\tsecrets-storage save <project> <file>");
+        let file_str = file_arg.log_on_none("Error: no file provided\nfull command is: \n\tsecrets-storage save <project> <file>");
+
+        match save_secrets(String::from(project), String::from(file_str)){
             Ok(_) => println!("File saved successfully"),
             Err(_) => println!("Error saving file"), 
         }
 
     } else if command == "get" {
-        let project = match args.next(){
-            Some(project) => project,
-            None => {
-                println!("Error: no project provided\nfull command is: \n\tsecrets-storage get <project> <file> <location - optional>");
-                return;
-            },
-        };
-        let file_str = match args.next(){
-            Some(file_str) => file_str,
-            None => {
-                println!("Error: no file provided\nfull command is: \n\tsecrets-storage get <project> <file> <location - optional>");
-                return;
-            },
-        };
+        let project = project_arg.log_on_none("Error: no project provided\nfull command is: \n\tsecrets-storage get <project> <file> <location - optional>");
+        let file_str = file_arg.log_on_none("Error: no file provided\nfull command is: \n\tsecrets-storage get <project> <file> <location - optional>");
         let location_str = match args.next(){
             Some(location) => location,
             None => String::from("./"),
         };
 
-        match get_secrets(project, file_str, location_str) {
+        match get_secrets(String::from(project), String::from(file_str), location_str) {
             Ok(message) => println!("{}", message),
             Err(_) => println!("Error retrieving file"), 
         }
+
     } else if command == "delete" {
-        let project = match args.next(){
-            Some(project) => project,
-            None => {
-                println!("Error: no project provided\nfull command is: \n\tsecrets-storage delete <project> <file - optional>");
-                return;
-            },
-        };
+        let project = project_arg.log_on_none("Error: no project provided\nfull command is: \n\tsecrets-storage delete <project> <file - optional>");
         let file_str = match args.next(){
             Some(file_str) => file_str,
             None => String::new(),
         };
-        match delete_secrets(project, file_str) {
+
+        match delete_secrets(String::from(project), file_str) {
             Ok(message) => println!("{}", message),
             Err(_) => println!("Error deleting file or directory"), 
         }
 
     } else {
-        println!("{} is not a valid command", command);
+        println!("{} is not a valid command. Type \"secrets-storage\" to see the list of all available commands.", command);
     }
 }
 
@@ -122,7 +112,7 @@ fn get_secrets(project: String, file_str: String, location_str: String) -> std::
 
 fn delete_secrets(project: String, file_str: String) -> std::io::Result<&'static str> {
     let mut input = String::new();
-    if file_str.len() > 0 {
+    if !file_str.is_empty() {
         let storage_path_str = format!("C:/Users/matth/secrets-storage/projects/{}/{}", project, &file_str);
         print!("Are you sure you want to delete {}?[y/n] ", &file_str);
         let _ = std::io::stdout().flush();
@@ -140,7 +130,7 @@ fn delete_secrets(project: String, file_str: String) -> std::io::Result<&'static
         std::io::stdin().read_line(&mut input).expect("Failed to read user input");
         if input.trim() == "y" {
             std::fs::remove_dir_all(storage_path_str)?;
-            return Ok("Successfully deleted directory")
+            return Ok("Successfully deleted project")
         } else {
             return Ok("")
         }
